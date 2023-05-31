@@ -2,14 +2,14 @@
  * PlantUML : a free UML diagram generator
  * ========================================================================
  *
- * (C) Copyright 2009-2020, Arnaud Roques
+ * (C) Copyright 2009-2024, Arnaud Roques
  *
- * Project Info:  http://plantuml.com
+ * Project Info:  https://plantuml.com
  * 
  * If you like this project or if you find it useful, you can support us at:
  * 
- * http://plantuml.com/patreon (only 1$ per month!)
- * http://plantuml.com/paypal
+ * https://plantuml.com/patreon (only 1$ per month!)
+ * https://plantuml.com/paypal
  * 
  * This file is part of PlantUML.
  *
@@ -35,16 +35,16 @@
  */
 package net.sourceforge.plantuml.activitydiagram3.ftile.vcompact.cond;
 
-import java.awt.geom.Dimension2D;
 import java.util.Arrays;
 import java.util.Collection;
 
 import net.sourceforge.plantuml.activitydiagram3.ftile.Ftile;
 import net.sourceforge.plantuml.activitydiagram3.ftile.FtileGeometry;
 import net.sourceforge.plantuml.activitydiagram3.ftile.Swimlane;
-import net.sourceforge.plantuml.graphic.StringBounder;
-import net.sourceforge.plantuml.ugraphic.UGraphic;
-import net.sourceforge.plantuml.ugraphic.UTranslate;
+import net.sourceforge.plantuml.klimt.UTranslate;
+import net.sourceforge.plantuml.klimt.drawing.UGraphic;
+import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 
 public class FtileIfWithDiamonds extends FtileIfNude {
 
@@ -64,18 +64,20 @@ public class FtileIfWithDiamonds extends FtileIfNude {
 		return Arrays.asList(diamond1, diamond2, tile1, tile2);
 	}
 
-	public int getYdelta1a(StringBounder stringBounder) {
-		if (getSwimlanes().size() > 1) {
+	protected int getYdelta1a(StringBounder stringBounder) {
+		if (getSwimlanes().size() > 1)
 			return 20;
-		}
 		return 10;
 	}
 
-	public int getYdelta1b(StringBounder stringBounder) {
-		if (getSwimlanes().size() > 1) {
+	protected int getYdelta1b(StringBounder stringBounder) {
+		if (getSwimlanes().size() > 1)
 			return 10;
-		}
 		return hasTwoBranches(stringBounder) ? 6 : 0;
+	}
+
+	protected double getYdeltaForLabels(StringBounder stringBounder) {
+		return 0;
 	}
 
 	@Override
@@ -93,7 +95,8 @@ public class FtileIfWithDiamonds extends FtileIfNude {
 
 		final FtileGeometry all = dim1.appendBottom(dimNude).appendBottom(dim2);
 
-		return all.addDim(0, getYdelta1a(stringBounder) + getYdelta1b(stringBounder));
+		return all.addDim(0,
+				getYdelta1a(stringBounder) + getYdelta1b(stringBounder) + getYdeltaForLabels(stringBounder));
 
 	}
 
@@ -136,36 +139,36 @@ public class FtileIfWithDiamonds extends FtileIfNude {
 		return new UTranslate(x2, y2);
 	}
 
-	public double computeMarginNeedForBranchLabe1(StringBounder stringBounder, Dimension2D label1) {
+	public double computeMarginNeedForBranchLabe1(StringBounder stringBounder, XDimension2D label1) {
 		final double widthLabelBranch1 = label1.getWidth();
 		final double dxDiamond = getTranslateDiamond1(stringBounder).getDx();
 		final double diff = widthLabelBranch1 - dxDiamond;
-		if (diff > 0) {
+		if (diff > 0)
 			return diff;
-		}
+
 		return 0;
 	}
 
-	public double computeMarginNeedForBranchLabe2(StringBounder stringBounder, Dimension2D label2) {
+	public double computeMarginNeedForBranchLabe2(StringBounder stringBounder, XDimension2D label2) {
 		final double widthLabelBranch2 = label2.getWidth();
 		final double theoricalEndNeeded = getTranslateDiamond1(stringBounder).getDx()
 				+ diamond1.calculateDimension(stringBounder).getWidth() + widthLabelBranch2;
 		final double diff = theoricalEndNeeded - calculateDimension(stringBounder).getWidth();
-		if (diff > 0) {
+		if (diff > 0)
 			return diff;
-		}
+
 		return 0;
 	}
 
-	public double computeVerticalMarginNeedForBranchs(StringBounder stringBounder, Dimension2D label1,
-			Dimension2D label2) {
+	public double computeVerticalMarginNeedForBranchs(StringBounder stringBounder, XDimension2D label1,
+			XDimension2D label2) {
 		final double heightLabels = Math.max(label1.getHeight(), label2.getHeight());
 		final FtileGeometry dimDiamond1 = diamond1.calculateDimension(stringBounder);
 		final double dyDiamond = dimDiamond1.getHeight();
 		final double diff = heightLabels - dyDiamond;
-		if (diff > 0) {
+		if (diff > 0)
 			return diff;
-		}
+
 		return 0;
 	}
 

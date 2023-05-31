@@ -2,14 +2,14 @@
  * PlantUML : a free UML diagram generator
  * ========================================================================
  *
- * (C) Copyright 2009-2020, Arnaud Roques
+ * (C) Copyright 2009-2024, Arnaud Roques
  *
- * Project Info:  http://plantuml.com
+ * Project Info:  https://plantuml.com
  * 
  * If you like this project or if you find it useful, you can support us at:
  * 
- * http://plantuml.com/patreon (only 1$ per month!)
- * http://plantuml.com/paypal
+ * https://plantuml.com/patreon (only 1$ per month!)
+ * https://plantuml.com/paypal
  * 
  * This file is part of PlantUML.
  *
@@ -39,16 +39,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import net.sourceforge.plantuml.AlignmentParam;
-import net.sourceforge.plantuml.Dimension2DDouble;
-import net.sourceforge.plantuml.ISkinParam;
 import net.sourceforge.plantuml.OptionFlags;
-import net.sourceforge.plantuml.PaddingParam;
-import net.sourceforge.plantuml.SkinParamBackcolored;
-import net.sourceforge.plantuml.SkinParamBackcoloredReference;
-import net.sourceforge.plantuml.cucadiagram.Display;
-import net.sourceforge.plantuml.graphic.HorizontalAlignment;
-import net.sourceforge.plantuml.graphic.StringBounder;
+import net.sourceforge.plantuml.klimt.creole.Display;
+import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.sequencediagram.AbstractMessage;
 import net.sourceforge.plantuml.sequencediagram.Delay;
 import net.sourceforge.plantuml.sequencediagram.Divider;
@@ -73,7 +67,11 @@ import net.sourceforge.plantuml.sequencediagram.ParticipantType;
 import net.sourceforge.plantuml.sequencediagram.Reference;
 import net.sourceforge.plantuml.skin.Component;
 import net.sourceforge.plantuml.skin.ComponentType;
+import net.sourceforge.plantuml.skin.PaddingParam;
+import net.sourceforge.plantuml.skin.SkinParamBackcolored;
+import net.sourceforge.plantuml.skin.SkinParamBackcoloredReference;
 import net.sourceforge.plantuml.skin.rose.Rose;
+import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.Style;
 
 class DrawableSetInitializer {
@@ -204,8 +202,8 @@ class DrawableSetInitializer {
 
 		prepareMissingSpace(stringBounder);
 
-		drawableSet.setDimension(new Dimension2DDouble(freeX,
-				getTotalHeight(freeY2.getFreeY(getFullParticipantRange()), stringBounder)));
+		drawableSet.setDimension(
+				new XDimension2D(freeX, getTotalHeight(freeY2.getFreeY(getFullParticipantRange()), stringBounder)));
 		return drawableSet;
 	}
 
@@ -364,7 +362,7 @@ class DrawableSetInitializer {
 		final Display strings = start.getTitle().equals("group") ? Display.create(start.getComment())
 				: Display.create(start.getTitle(), start.getComment());
 		final Component header = drawableSet.getSkin().createComponent(start.getUsedStyles(),
-				ComponentType.GROUPING_HEADER, null, skinParam, strings);
+				ComponentType.GROUPING_HEADER_LEGACY, null, skinParam, strings);
 		final ParticipantBox veryfirst = drawableSet.getVeryfirst();
 		final InGroupableList inGroupableList = new InGroupableList(veryfirst, start, freeY2.getFreeY(range));
 		inGroupableStack.addList(inGroupableList);
@@ -388,7 +386,7 @@ class DrawableSetInitializer {
 				freeY2 = ((FrontierStack) freeY2).restore();
 
 			final Component compElse = drawableSet.getSkin().createComponent(m.getUsedStyles(),
-					ComponentType.GROUPING_ELSE, null, skinParam, Display.create(m.getComment()));
+					ComponentType.GROUPING_ELSE_LEGACY, null, skinParam, Display.create(m.getComment()));
 			final Lazy lazy = new Lazy() {
 				public double getNow() {
 					final GraphicalElement after = drawableSet.getEvent(m.getJustAfter());
@@ -409,7 +407,8 @@ class DrawableSetInitializer {
 			for (Note noteOnMessage : m.getNoteOnMessages()) {
 				final ISkinParam sk = noteOnMessage.getSkinParamBackcolored(drawableSet.getSkinParam());
 				final Component note = drawableSet.getSkin().createComponentNote(noteOnMessage.getUsedStyles(),
-						noteOnMessage.getNoteStyle().getNoteComponentType(), sk, noteOnMessage.getStrings());
+						noteOnMessage.getNoteStyle().getNoteComponentType(), sk, noteOnMessage.getDisplay(),
+						noteOnMessage.getColors());
 				notes.add(note);
 			}
 			if (m.isParallel())
@@ -467,7 +466,7 @@ class DrawableSetInitializer {
 			}
 
 		final Component component = drawableSet.getSkin().createComponentNote(n.getUsedStyles(), type, skinParam,
-				n.getStrings(), n.getPosition());
+				n.getDisplay(), n.getColors(), n.getPosition());
 		final NoteBox noteBox = new NoteBox(freeY2.getFreeY(range), component, p1, p2, n.getPosition(), n.getUrl());
 		return noteBox;
 	}
@@ -559,10 +558,24 @@ class DrawableSetInitializer {
 		Display strings = Display.empty();
 		strings = strings.add("ref");
 		strings = strings.addAll(reference.getStrings());
+
+		Component noteLeft = null;
+		Component noteRight = null;
+		for (Note noteOnMessage : reference.getNoteOnMessages()) {
+			final ISkinParam skinParam2 = noteOnMessage.getSkinParamBackcolored(drawableSet.getSkinParam());
+			final Component note = drawableSet.getSkin().createComponentNote(noteOnMessage.getUsedStyles(),
+					noteOnMessage.getNoteStyle().getNoteComponentType(), skinParam2, noteOnMessage.getDisplay(),
+					noteOnMessage.getColors());
+			if (noteOnMessage.getPosition() == NotePosition.RIGHT)
+				noteRight = note;
+			else
+				noteLeft = note;
+		}
+
 		final Component comp = drawableSet.getSkin().createComponent(reference.getUsedStyles(), ComponentType.REFERENCE,
 				null, skinParam, strings);
 		final GraphicalReference graphicalReference = new GraphicalReference(freeY2.getFreeY(range), comp, p1, p2,
-				reference.getUrl());
+				reference.getUrl(), noteLeft, noteRight);
 
 		final ParticipantBox pbox1 = p1.getParticipantBox();
 		final ParticipantBox pbox2 = p2.getParticipantBox();
@@ -617,13 +630,13 @@ class DrawableSetInitializer {
 			throw new IllegalArgumentException();
 		}
 
-		final ISkinParam skinParam = p.getSkinParamBackcolored(drawableSet.getSkinParam());
+		final ISkinParam skinParam = drawableSet.getSkinParam();
 		final Display participantDisplay = p.getDisplay(skinParam.forceSequenceParticipantUnderlined());
 		final Component head = drawableSet.getSkin().createComponent(p.getUsedStyles(), headType, null, skinParam,
 				participantDisplay);
 		final Component tail = drawableSet.getSkin().createComponent(p.getUsedStyles(), tailType, null, skinParam,
 				participantDisplay);
-		final Style style = this.defaultLineType.getDefaultStyleDefinition().with(p.getStereotype())
+		final Style style = this.defaultLineType.getStyleSignature().withTOBECHANGED(p.getStereotype())
 				.getMergedStyle(skinParam.getCurrentStyleBuilder());
 		final Component line = drawableSet.getSkin().createComponent(new Style[] { style }, this.defaultLineType, null,
 				drawableSet.getSkinParam(), participantDisplay);
@@ -633,7 +646,7 @@ class DrawableSetInitializer {
 				skinParam.maxAsciiMessageLength() > 0 ? 1 : 5);
 
 		final Component comp = drawableSet.getSkin().createComponent(
-				new Style[] { ComponentType.ALIVE_BOX_CLOSE_CLOSE.getDefaultStyleDefinition()
+				new Style[] { ComponentType.ALIVE_BOX_CLOSE_CLOSE.getStyleSignature()
 						.getMergedStyle(drawableSet.getSkinParam().getCurrentStyleBuilder()) },
 				ComponentType.ALIVE_BOX_CLOSE_CLOSE, null, drawableSet.getSkinParam(), null);
 

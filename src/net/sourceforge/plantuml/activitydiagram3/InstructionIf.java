@@ -2,14 +2,14 @@
  * PlantUML : a free UML diagram generator
  * ========================================================================
  *
- * (C) Copyright 2009-2020, Arnaud Roques
+ * (C) Copyright 2009-2024, Arnaud Roques
  *
- * Project Info:  http://plantuml.com
+ * Project Info:  https://plantuml.com
  * 
  * If you like this project or if you find it useful, you can support us at:
  * 
- * http://plantuml.com/patreon (only 1$ per month!)
- * http://plantuml.com/paypal
+ * https://plantuml.com/patreon (only 1$ per month!)
+ * https://plantuml.com/paypal
  * 
  * This file is part of PlantUML.
  *
@@ -42,8 +42,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import net.sourceforge.plantuml.ISkinParam;
-import net.sourceforge.plantuml.Url;
 import net.sourceforge.plantuml.activitydiagram3.ftile.Ftile;
 import net.sourceforge.plantuml.activitydiagram3.ftile.FtileDecorateWelding;
 import net.sourceforge.plantuml.activitydiagram3.ftile.FtileFactory;
@@ -54,12 +52,15 @@ import net.sourceforge.plantuml.activitydiagram3.gtile.Gtile;
 import net.sourceforge.plantuml.activitydiagram3.gtile.GtileIfAlone;
 import net.sourceforge.plantuml.activitydiagram3.gtile.GtileIfHexagon;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
-import net.sourceforge.plantuml.cucadiagram.Display;
-import net.sourceforge.plantuml.graphic.StringBounder;
-import net.sourceforge.plantuml.graphic.color.Colors;
+import net.sourceforge.plantuml.klimt.color.Colors;
+import net.sourceforge.plantuml.klimt.color.HColor;
+import net.sourceforge.plantuml.klimt.creole.Display;
+import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.klimt.geom.VerticalAlignment;
 import net.sourceforge.plantuml.sequencediagram.NotePosition;
 import net.sourceforge.plantuml.sequencediagram.NoteType;
-import net.sourceforge.plantuml.ugraphic.color.HColor;
+import net.sourceforge.plantuml.style.ISkinParam;
+import net.sourceforge.plantuml.url.Url;
 
 public class InstructionIf extends WithNote implements Instruction, InstructionCollection {
 
@@ -107,6 +108,7 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 		return current.add(ins);
 	}
 
+	// ::comment when __CORE__
 	@Override
 	public Gtile createGtile(ISkinParam skinParam, StringBounder stringBounder) {
 		for (Branch branch : thens)
@@ -128,29 +130,31 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 			return new GtileIfAlone(swimlane, gtiles.get(0), branches.get(0));
 		return GtileIfHexagon.build(swimlane, gtiles, branches);
 	}
+	// ::done
 
 	@Override
 	public Ftile createFtile(FtileFactory factory) {
-		for (Branch branch : thens) {
+		for (Branch branch : thens)
 			branch.updateFtile(factory);
-		}
+
 		if (elseBranch == null)
 			this.elseBranch = new Branch(skinParam.getCurrentStyleBuilder(), swimlane, LinkRendering.none(),
 					Display.NULL, null, LinkRendering.none());
 
 		elseBranch.updateFtile(factory);
 		Ftile result = factory.createIf(swimlane, thens, elseBranch, outColor, topInlinkRendering, url);
-		if (getPositionedNotes().size() > 0) {
-			result = FtileWithNoteOpale.create(result, getPositionedNotes(), skinParam, false);
-		}
+		if (getPositionedNotes().size() > 0)
+			result = FtileWithNoteOpale.create(result, getPositionedNotes(), skinParam, false,
+					VerticalAlignment.CENTER);
+
 		final List<WeldingPoint> weldingPoints = new ArrayList<>();
-		for (Branch branch : thens) {
+		for (Branch branch : thens)
 			weldingPoints.addAll(branch.getWeldingPoints());
-		}
+
 		weldingPoints.addAll(elseBranch.getWeldingPoints());
-		if (weldingPoints.size() > 0) {
+		if (weldingPoints.size() > 0)
 			result = new FtileDecorateWelding(result, weldingPoints);
-		}
+
 		return result;
 	}
 
@@ -159,9 +163,9 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 	}
 
 	public boolean swithToElse2(LinkRendering whenElse, LinkRendering nextLinkRenderer) {
-		if (elseBranch != null) {
+		if (elseBranch != null)
 			return false;
-		}
+
 		this.current.setInlinkRendering(nextLinkRenderer);
 		this.elseBranch = new Branch(skinParam.getCurrentStyleBuilder(), swimlane, whenElse, Display.NULL, null,
 				LinkRendering.none());
@@ -171,9 +175,9 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 
 	public boolean elseIf(LinkRendering inlabel, Display test, LinkRendering whenThen, LinkRendering nextLinkRenderer,
 			HColor color) {
-		if (elseBranch != null) {
+		if (elseBranch != null)
 			return false;
-		}
+
 		// this.current.setInlinkRendering(nextLinkRenderer);
 		this.current.setSpecial(nextLinkRenderer);
 		this.current = new Branch(skinParam.getCurrentStyleBuilder(), swimlane, whenThen, test, color, inlabel);
@@ -184,10 +188,10 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 
 	public void endif(LinkRendering nextLinkRenderer) {
 		endifCalled = true;
-		if (elseBranch == null) {
+		if (elseBranch == null)
 			this.elseBranch = new Branch(skinParam.getCurrentStyleBuilder(), swimlane, LinkRendering.none(),
 					Display.NULL, null, LinkRendering.none());
-		}
+
 		this.elseBranch.setSpecial(nextLinkRenderer);
 		this.current.setInlinkRendering(nextLinkRenderer);
 	}
@@ -196,12 +200,12 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 	final public boolean kill() {
 		if (endifCalled) {
 			for (Branch branch : thens) {
-				if (branch.getLast() != null && branch.getLast().kill() == false) {
+				if (branch.getLast() != null && branch.getLast().kill() == false)
 					return false;
-				}
-				if (elseBranch != null && elseBranch.getLast() != null && elseBranch.getLast().kill() == false) {
+
+				if (elseBranch != null && elseBranch.getLast() != null && elseBranch.getLast().kill() == false)
 					return false;
-				}
+
 				return true;
 			}
 		}
@@ -215,25 +219,25 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 
 	@Override
 	public boolean addNote(Display note, NotePosition position, NoteType type, Colors colors, Swimlane swimlaneNote) {
-		if (endifCalled || current.isEmpty()) {
+		if (endifCalled || current.isEmpty())
 			return super.addNote(note, position, type, colors, swimlaneNote);
-		} else {
+		else
 			return current.addNote(note, position, type, colors, swimlaneNote);
-		}
+
 	}
 
 	@Override
 	public Set<Swimlane> getSwimlanes() {
 		final Set<Swimlane> result = new HashSet<>();
-		if (swimlane != null) {
+		if (swimlane != null)
 			result.add(swimlane);
-		}
-		for (Branch branch : thens) {
+
+		for (Branch branch : thens)
 			result.addAll(branch.getSwimlanes());
-		}
-		if (elseBranch != null) {
+
+		if (elseBranch != null)
 			result.addAll(elseBranch.getSwimlanes());
-		}
+
 		return Collections.unmodifiableSet(result);
 	}
 
@@ -249,9 +253,9 @@ public class InstructionIf extends WithNote implements Instruction, InstructionC
 
 	@Override
 	public Instruction getLast() {
-		if (elseBranch == null) {
+		if (elseBranch == null)
 			return thens.get(thens.size() - 1).getLast();
-		}
+
 		return elseBranch.getLast();
 	}
 
